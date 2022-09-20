@@ -34,18 +34,18 @@ import (
 var Version string
 
 func usage() {
-	log.Fatalf("Usage: nk [-v] [-gen type] [-sign file] [-verify file] [-inkey keyfile] [-pubin keyfile] [-sigfile file] [-pubout] [-e entropy] [-pre vanity]\n")
+	log.Fatalf("Usage: nk [-v] [-gen type] [-sign content] [-verify content] [-inkey key] [-pubin publickey] [-sig signature] [-pubout] [-e entropy] [-pre vanity]\n")
 }
 
 func main() {
-	var entropy = flag.String("e", "", "Entropy file, e.g. /dev/urandom")
-	var keyFile = flag.String("inkey", "", "Input key file (seed/private key)")
-	var pubFile = flag.String("pubin", "", "Public key file")
+	var entropy = flag.String("e", "", "Entropy, e.g. /dev/urandom")
+	var keyFile = flag.String("inkey", "", "Input key  (seed/private key)")
+	var pubFile = flag.String("pubin", "", "Public key ")
 
 	var signFile = flag.String("sign", "", "Sign <file> with -inkey <key>")
-	var sigFile = flag.String("sigfile", "", "Signature file")
+	var sigFile = flag.String("sig", "", "Signature content")
 
-	var verifyFile = flag.String("verify", "", "Verfify <file> with -inkey <keyfile> or -pubin <public> and -sigfile <file>")
+	var verifyFile = flag.String("verify", "", "Verify content with -inkey <key> or -pubin <public> and -sig <file>")
 
 	var keyType = flag.String("gen", "", "Generate key for <type>, e.g. nk -gen user")
 	var pubout = flag.Bool("pubout", false, "Output public key")
@@ -111,7 +111,7 @@ func main() {
 }
 
 func printPublicFromSeed(keyFile string) {
-	seed := readKeyFile(keyFile)
+	var seed = []byte(keyFile)
 	kp, err := nkeys.FromSeed(seed)
 	if err != nil {
 		log.Fatal(err)
@@ -124,16 +124,13 @@ func sign(fname, keyFile string) {
 	if keyFile == "" {
 		log.Fatalf("Sign requires a seed/private key via -inkey <file>")
 	}
-	seed := readKeyFile(keyFile)
+	seed := []byte(keyFile)
 	kp, err := nkeys.FromSeed(seed)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	content, err := ioutil.ReadFile(fname)
-	if err != nil {
-		log.Fatal(err)
-	}
+	content := []byte(fname)
 
 	sigraw, err := kp.Sign(content)
 	if err != nil {
@@ -152,16 +149,16 @@ func verify(fname, keyFile, pubFile, sigFile string) {
 	var err error
 	var kp nkeys.KeyPair
 	if keyFile != "" {
-		var seed []byte
-		seed, err = ioutil.ReadFile(keyFile)
+		var seed []byte = []byte(keyFile)
+
 		if err != nil {
 			log.Fatal(err)
 		}
 		kp, err = nkeys.FromSeed(seed)
 	} else {
 		// Public Key
-		var public []byte
-		public, err = ioutil.ReadFile(pubFile)
+		var public []byte = []byte(pubFile)
+
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -171,16 +168,9 @@ func verify(fname, keyFile, pubFile, sigFile string) {
 		log.Fatal(err)
 	}
 
-	content, err := ioutil.ReadFile(fname)
-	if err != nil {
-		log.Fatal(err)
-	}
+	content := []byte(fname)
 
-	sigEnc, err := ioutil.ReadFile(sigFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	sig, err := base64.StdEncoding.DecodeString(string(sigEnc))
+	sig, err := base64.StdEncoding.DecodeString(sigFile)
 	if err != nil {
 		log.Fatal(err)
 	}
