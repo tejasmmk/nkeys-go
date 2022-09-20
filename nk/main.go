@@ -38,13 +38,13 @@ func usage() {
 
 func main() {
 	var entropy = flag.String("e", "", "Entropy, e.g. /dev/urandom")
-	var keyFile = flag.String("inkey", "", "Input key  (seed/private key)")
-	var pubFile = flag.String("pubin", "", "Public key ")
+	var key = flag.String("inkey", "", "Input key  (seed/private key)")
+	var pub = flag.String("pubin", "", "Public key ")
 
-	var signFile = flag.String("sign", "", "Sign <file> with -inkey <key>")
-	var sigFile = flag.String("sig", "", "Signature content")
+	var signContent = flag.String("sign", "", "Sign <file> with -inkey <key>")
+	var sig = flag.String("sig", "", "Signature content")
 
-	var verifyFile = flag.String("verify", "", "Verify content with -inkey <key> or -pubin <public> and -sig <file>")
+	var verifyContent = flag.String("verify", "", "Verify content with -inkey <key> or -pubin <public> and -sig <file>")
 
 	var keyType = flag.String("gen", "", "Generate key for <type>, e.g. nk -gen user")
 	var pubout = flag.Bool("pubout", false, "Output public key")
@@ -89,20 +89,20 @@ func main() {
 	}
 
 	// Sign
-	if *signFile != "" {
-		sign(*signFile, *keyFile)
+	if *signContent != "" {
+		sign(*signContent, *key)
 		return
 	}
 
 	// Verfify
-	if *verifyFile != "" {
-		verify(*verifyFile, *keyFile, *pubFile, *sigFile)
+	if *verifyContent != "" {
+		verify(*verifyContent, *key, *pub, *sig)
 		return
 	}
 
 	// Show public key from seed/private
-	if *keyFile != "" && *pubout {
-		printPublicFromSeed(*keyFile)
+	if *key != "" && *pubout {
+		printPublicFromSeed(*key)
 		return
 	}
 
@@ -110,7 +110,7 @@ func main() {
 }
 
 func printPublicFromSeed(keyFile string) {
-	seed := readKeyFile(keyFile)
+	seed := readKey(keyFile)
 
 	kp, err := nkeys.FromSeed(seed)
 	if err != nil {
@@ -120,17 +120,17 @@ func printPublicFromSeed(keyFile string) {
 	log.Printf("%s", pub)
 }
 
-func sign(fname, keyFile string) {
-	if keyFile == "" {
+func sign(name, key string) {
+	if key == "" {
 		log.Fatalf("Sign requires a seed/private key via -inkey <file>")
 	}
-	seed := readKeyFile(keyFile)
+	seed := readKey(key)
 	kp, err := nkeys.FromSeed(seed)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	content := []byte(fname)
+	content := []byte(name)
 
 	sigraw, err := kp.Sign(content)
 	if err != nil {
@@ -276,7 +276,7 @@ func createVanityKey(keyType, vanity, entropy string, max int) nkeys.KeyPair {
 	return nil
 }
 
-func readKeyFile(filename string) []byte {
+func readKey(filename string) []byte {
 	var key []byte
 	var contents = []byte(filename)
 	defer wipeSlice(contents)
