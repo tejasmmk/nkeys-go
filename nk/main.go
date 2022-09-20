@@ -21,7 +21,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"runtime"
@@ -111,7 +110,8 @@ func main() {
 }
 
 func printPublicFromSeed(keyFile string) {
-	var seed = []byte(keyFile)
+	seed := readKeyFile(keyFile)
+
 	kp, err := nkeys.FromSeed(seed)
 	if err != nil {
 		log.Fatal(err)
@@ -124,7 +124,7 @@ func sign(fname, keyFile string) {
 	if keyFile == "" {
 		log.Fatalf("Sign requires a seed/private key via -inkey <file>")
 	}
-	seed := []byte(keyFile)
+	seed := readKeyFile(keyFile)
 	kp, err := nkeys.FromSeed(seed)
 	if err != nil {
 		log.Fatal(err)
@@ -278,10 +278,7 @@ func createVanityKey(keyType, vanity, entropy string, max int) nkeys.KeyPair {
 
 func readKeyFile(filename string) []byte {
 	var key []byte
-	contents, err := ioutil.ReadFile(filename)
-	if err != nil {
-		log.Fatal(err)
-	}
+	var contents = []byte(filename)
 	defer wipeSlice(contents)
 
 	lines := bytes.Split(contents, []byte("\n"))
